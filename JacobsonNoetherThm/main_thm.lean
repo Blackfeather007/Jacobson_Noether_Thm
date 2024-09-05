@@ -182,7 +182,13 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
         rw [eq1]
         simp only [mul_one]
   have a_inv : a⁻¹ * a = 1 := by
-    refine inv_mul_cancel₀ ?h
+    apply inv_mul_cancel₀ ?h
+    by_contra nh
+    rw [nh] at ha
+    have : 0 ∈ Subring.center D := Subring.zero_mem (Subring.center D)
+    contradiction
+  have inv_a : a * a⁻¹ = 1 := by
+    apply mul_inv_cancel₀ _
     by_contra nh
     rw [nh] at ha
     have : 0 ∈ Subring.center D := Subring.zero_mem (Subring.center D)
@@ -218,16 +224,22 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
               _ = (a⁻¹ * d * a) ^ s * (a⁻¹ * d * a) := by
                 rw [@npow_add]
                 simp only [pow_one]
-              _ = a⁻¹ * d ^ s * a * (a⁻¹ * d * a) := by rw [ih]
-              _ = a⁻¹ * d ^ s * (a * a⁻¹) * d * a := by
-    --       simp only [mul_left_inj, mul_right_inj]
-    --       exact pow_succ (b * a * b⁻¹) n
-    --     _ = b⁻¹ * (b * a * b⁻¹) ^ n * b * (a * b⁻¹ * b) := by group
-    --     --Then use the Induction hypothesis and we have it $= a ^ n * (a * b⁻¹ * b) = a ^ {n + 1}$
-    --     _ = a ^ n * (a * b⁻¹ * b):= by rw [ih]
-    --     _ = _ := by group
-        sorry
-      _ = _ := sorry
+              _ = a⁻¹ * d ^ s * (a * a⁻¹) * d * a := by simp_rw [← ih, @NonUnitalRing.mul_assoc]
+              _ = a⁻¹ * d ^ s * d * a := by simp only [inv_a, mul_one]
+              _ = a⁻¹ * (d ^ s * d) * a := by simp_rw [@NonUnitalRing.mul_assoc]
+              _ = _ := by
+                simp only [mul_eq_mul_right_iff, mul_eq_mul_left_iff, inv_eq_zero, or_self_right]
+                left
+                exact Eq.symm (pow_succ d s)
+      _ = _ := by
+        simp only [add_right_inj]
+        have : a * d ^ p ^ r = d ^ p ^ r * a := Eq.symm (hd.comm a)
+        calc
+          _ = a⁻¹ * (d ^ p ^ r * a) := by simp_rw [@NonUnitalRing.mul_assoc]
+          _ = a⁻¹ * (a * d ^ p ^ r) := by rw [this]
+          _ = (a⁻¹ * a) * d ^ p ^ r := by simp_rw [@NonUnitalRing.mul_assoc]
+          _ = _ := by simp only [a_inv, one_mul]
+
   simp only [self_eq_add_left, one_ne_zero] at eq
 
 theorem Jacobson_Noether [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
