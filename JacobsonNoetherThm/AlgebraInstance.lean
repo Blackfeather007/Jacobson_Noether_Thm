@@ -1,17 +1,31 @@
 import Mathlib.Algebra.Ring.Subring.Basic
-import Mathlib.Algebra.Algebra.Defs
 import Mathlib.RingTheory.Algebraic
--- import Mathlib.FieldTheory.Separable
 
 variable {D : Type*} [DivisionRing D]
 
 local notation "k" => (Subring.center D)
 
-instance : Algebra k D := by
-  refine Algebra.ofModule ?h₁ ?h₂
-  · intro r x y
-    exact smul_mul_assoc r x y
-  · intro r x y
-    exact mul_smul_comm r x y
+instance : Algebra k D := Algebra.ofModule smul_mul_assoc mul_smul_comm
 
-instance : Field k := Subring.instField
+instance {p : ℕ} [Fact p.Prime] [CharP D p] : CharP (D →ₗ[k] D) p := by
+  let f : D →+* (D →ₗ[k] D) := {
+      toFun := fun a => {
+        toFun := fun x => a * x
+        map_add' := fun x y ↦ LeftDistribClass.left_distrib a x y
+        map_smul' := fun m x ↦ mul_smul_comm m a x
+      }
+      map_one' := LinearMap.ext fun x ↦ one_mul x
+      map_mul' := fun x y => LinearMap.ext fun z ↦ mul_assoc x y z
+      map_zero' := LinearMap.ext fun x ↦ zero_mul x
+      map_add' := fun x y => LinearMap.ext fun z ↦ add_mul x y z
+    }
+  have inj : Function.Injective f := by
+    intros x y h
+    have eq : ∀ x : D, (f x) 1 = x := by
+      intro x
+      have : f x = fun a : D => x * a := by rfl
+      rw [this]
+      simp only [mul_one]
+    rw [← eq x, ← eq y]
+    exact congrFun (congrArg DFunLike.coe h) 1
+  apply charP_of_injective_ringHom inj

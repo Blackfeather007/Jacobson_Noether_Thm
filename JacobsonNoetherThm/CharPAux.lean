@@ -1,19 +1,37 @@
-import Mathlib
 import JacobsonNoetherThm.AlgebraInstance
+import Mathlib.FieldTheory.Separable
+import Mathlib.RingTheory.Algebraic
+import Mathlib.Algebra.CharP.Subring
 
-variable {D : Type*} [DivisionRing D] [Fact (Nat.Prime p)]
+variable {D : Type*} [DivisionRing D]
 
 local notation "k" => (Subring.center D)
 
--- #check IsPurelyInseparable
--- #check expChar_prime
--- #check IntermediateField.adjoin
--- #check isPurelyInseparable_iff_pow_mem
+lemma l1 (p : ℕ) [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (a : D)
+   (hinsep : ∀ x : D, IsSeparable k x → x ∈ k) : ∃ n, a ^ (p ^ n) ∈ k := by
+  obtain ⟨n, g, hg, geqf⟩ := @Polynomial.exists_separable_of_irreducible k _ p _ (minpoly k a)
+    (minpoly.irreducible (Algebra.IsIntegral.isIntegral a)) ((NeZero.ne' p).symm)
+  have h1 : (Polynomial.aeval a) ((Polynomial.expand k (p ^ n)) g) = 0 := by
+    rw [congrArg (⇑(Polynomial.aeval a)) geqf, minpoly.aeval k a]
+  simp only [Polynomial.expand_aeval] at h1
+  use n
+  apply hinsep (a ^ p ^ n) (Polynomial.Separable.of_dvd hg (minpoly.dvd_iff.mpr h1))
 
-instance : Field k := inferInstance
-
-lemma aux0 [CharP D p] :
-  ∀ a : D, a ∉ k → ∃ m ≥ 1, a ^ (p ^ m) ∈ k := sorry
+lemma l2 (p : ℕ) [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] {a : D}
+   (ha : a ∉ k) (hinsep : ∀ x : D, IsSeparable k x → x ∈ k) : ∃ n ≥ 1, a ^ (p ^ n) ∈ k := by
+  obtain ⟨n, g, hg, geqf⟩ := @Polynomial.exists_separable_of_irreducible k _ p _ (minpoly k a)
+    (minpoly.irreducible (Algebra.IsIntegral.isIntegral a)) ((NeZero.ne' p).symm)
+  by_cases nzero : n = 0
+  · rw [nzero, pow_zero, Polynomial.expand_one] at geqf
+    rw [geqf] at hg
+    tauto
+  use n
+  have h1 : (Polynomial.aeval a) ((Polynomial.expand k (p ^ n)) g) = 0 := by
+    rw [congrArg (⇑(Polynomial.aeval a)) geqf, minpoly.aeval k a]
+  simp only [Polynomial.expand_aeval] at h1
+  constructor
+  · exact Nat.one_le_iff_ne_zero.mpr nzero
+  exact hinsep (a ^ p ^ n) (Polynomial.Separable.of_dvd hg (minpoly.dvd_iff.mpr h1))
 
 def f (a : D) : D →ₗ[k] D := {
   toFun := fun x ↦ a * x
@@ -67,15 +85,10 @@ lemma g_pow (a : D) (n : ℕ) : ∀ x : D, ((g a) ^ n).1 x = x * (a ^ n) := by
     show (x * a ^ n) * a = x * a ^ (n + 1)
     rw [pow_add, pow_one, mul_assoc]
 
-instance [CharP D p] : CharP k p := inferInstance
-
-instance [CharP D p] : CharP (Module.End k D) p := by
-  refine { cast_eq_zero_iff' := ?cast_eq_zero_iff' }
-  sorry
-
-lemma final_aux [CharP D p] (a : D) (a_nin_k : a ∉ k) :
+lemma final_aux (p : ℕ) [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D]
+    {a : D} (ha : a ∉ k) (hinsep : ∀ x : D, IsSeparable k x → x ∈ k):
   ∃ m ≥ 1, ∀ n ≥ (p ^ m), (δ a) ^ n = 0 := by
-  obtain ⟨m, hm⟩ := aux0 a a_nin_k (p := p)
+  obtain ⟨m, hm⟩ := l2 p ha hinsep
   use m
   constructor
   · exact hm.1

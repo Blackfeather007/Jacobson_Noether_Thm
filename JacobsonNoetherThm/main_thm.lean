@@ -1,92 +1,45 @@
 import JacobsonNoetherThm.AlgebraInstance
+import JacobsonNoetherThm.CharPAux
 import Mathlib.RingTheory.Algebraic
 import Mathlib.FieldTheory.Separable
-import Mathlib.FieldTheory.Perfect
 import Mathlib.Algebra.CharP.Subring
-
-open Classical
 
 variable {D : Type*} [DivisionRing D]
 
 local notation "k" => (Subring.center D)
 
-lemma aux0 [CharP D p] :
-  ∀ a : D, a ∉ k → ∃ m ≥ 1, a ^ (p ^ m) ∈ k := sorry
+lemma choose_element_in_complementary_set (h : k ≠ (⊤ : Subring D)) : ∃ a : D, a ∉ k := by
+  by_contra! nt
+  apply h
+  rwa [← (Subring.eq_top_iff' (Subring.center D)).symm]
 
-def f (a : D) : D →ₗ[k] D := {
-  toFun := fun x ↦ a * x
-  map_add' := fun x y ↦ LeftDistribClass.left_distrib a x y
-  map_smul' := by
-    intro m x
-    simp only [Algebra.mul_smul_comm, RingHom.id_apply]
-}
-
-def g (a : D) : D →ₗ[k] D := {
-  toFun := fun x ↦ x * a
-  map_add' := fun x y ↦ RightDistribClass.right_distrib x y a
-  map_smul' := by
-    intro m x
-    simp only [Algebra.smul_mul_assoc, RingHom.id_apply]
-}
-
-def δ (a : D) : D →ₗ[k] D := {
-  toFun := f a - g a
-  map_add' := by
-    intro x y
-    simp only [Pi.sub_apply, map_add, add_sub_add_comm]
-  map_smul' := by
-    intro m x
-    simp only [Pi.sub_apply, map_smul, RingHom.id_apply, smul_sub]
-}
-
-lemma final_aux [CharP D p] (a : D) (a_nin_k : a ∉ k) :
-  ∃ m ≥ 1, ∀ n ≥ (p ^ m), (δ a) ^ n = 0 := sorry
-
-theorem choose_element_in_complementary_set [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
-  by_contra nt
-  push_neg at nt
-  have : k ≥ (⊤ : Subring D) := fun ⦃x⦄ _ ↦ nt x
-  have : k ≤ (⊤ : Subring D) := fun ⦃x⦄ _ ↦ trivial
-  have : k = (⊤ : Subring D) := (Subring.eq_top_iff' (Subring.center D)).mpr nt
-  rw [this] at h
-  contradiction
-
-theorem aux1 [CharP D 0] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
+/-- J-N thm for `CharP D 0` case -/
+theorem thm_char_zero [CharP D 0] [Algebra.IsAlgebraic k D] (h : k ≠ (⊤ : Subring D)) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   letI : CharZero k := (CharP.charP_zero_iff_charZero k).mp (by infer_instance)
-  have : ∃ a : D, a ∉ k := choose_element_in_complementary_set h
-  obtain ⟨a, ha⟩ := this
-  use a
-  constructor
-  · exact ha
-  · have : Polynomial.Separable (minpoly k a) := by
-      apply Irreducible.separable
-      apply minpoly.irreducible
-      exact Algebra.IsIntegral.isIntegral a
-    exact this
+  obtain ⟨a, ha⟩ := choose_element_in_complementary_set h
+  exact ⟨a, ⟨ha, Irreducible.separable (minpoly.irreducible (Algebra.IsIntegral.isIntegral a))⟩⟩
 
-theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
+/-- J-N thm for `CharP D p` case -/
+theorem thm_char_p {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h : k ≠ (⊤ : Subring D)) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   by_contra! insep
   obtain ⟨a, ha⟩ := choose_element_in_complementary_set h
+  have hinsep : ∀ x : D, IsSeparable k x → x ∈ k :=
+    fun x h ↦ Classical.byContradiction fun hx ↦ insep x hx h
+
   have a_not_commute : ∃ b : D , (δ a) b ≠ 0 := by
-    by_contra nh
-    push_neg at nh
-    have : ∀ x : D, (δ a) x = a * x - x * a := fun x ↦ rfl
-    have : a ∈ k := by
-      have : ∀ x : D, a * x = x * a := by
-        intro x
-        have : a * x - x * a = 0 := nh x
-        calc
-          _ = (a * x - x * a) + x * a := by simp only [sub_add_cancel]
-          _ = _ := by simp only [this, zero_add]
-      exact Semigroup.mem_center_iff.mpr (fun g ↦ Eq.symm (SemiconjBy.eq (this g)))
-    contradiction
+    by_contra! nh
+    apply ha
+    apply Subring.mem_center_iff.mpr
+    intro x
+    have := @eq_add_of_sub_eq' _ _ (a * x) (x * a) 0 (nh x)
+    rw [add_zero] at this
+    exact this.symm
 
   have : ∃ n > 0, ∃ b : D , ((δ a) ^ n) b ≠ 0 ∧ ((δ a) ^ (n + 1)) b = 0 := by
     obtain ⟨b, hb1⟩ := a_not_commute
-    have : ∃ m ≥ 1, ∀ n ≥ (p ^ m), (δ a) ^ n = 0 := final_aux a ha
-    rcases this with ⟨m, hm1, hm2⟩
+    rcases (final_aux p ha hinsep) with ⟨m, hm1, hm2⟩
     have exist : ∃ n > 0, ((δ a) ^ (n + 1)) b = 0 := by
       use p ^ m
       constructor
@@ -95,6 +48,7 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
           apply hm2 _
           linarith
         rw [this]; rfl
+    classical
     have ⟨hex1, hex2⟩ := (Nat.find_spec exist)
     use Nat.find exist
     simp only [gt_iff_lt, Function.iterate_succ, Function.comp_apply, hex1, ne_eq, true_and]
@@ -116,30 +70,22 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
 
   obtain ⟨n, hn, b, hb⟩ := this
   let c := ((δ a) ^ n) b
-  letI : Invertible c := by
-    have cne0 : c ≠ 0 := by
-      exact hb.left
-    use c⁻¹
-    · exact inv_mul_cancel₀ cne0
-    · exact mul_inv_cancel₀ cne0
+  letI : Invertible c := ⟨c⁻¹, inv_mul_cancel₀ (hb.1), mul_inv_cancel₀ (hb.1)⟩
   have important (n): δ a (((δ a) ^ n) b) = ((δ a) ^ (n + 1)) b := by
     rw [LinearMap.pow_apply, LinearMap.pow_apply, ← Nat.succ_eq_add_one]
     exact Eq.symm (Function.iterate_succ_apply' (δ a) n b)
   have hc : c * a = a * c := by
-    let f (a : D) : D → D := fun x ↦ a * x
-    let g (a : D) : D → D := fun x ↦ x * a
     have f_def : (f a) c = a * c := rfl
     have g_def : (g a) c = c * a := rfl
     have prop_d : (δ a) c = (f a - g a) c := rfl
     have prop_c : c = ((δ a) ^ n) b := rfl
     rw [← f_def, ← g_def]
     suffices (f a - g a) c = 0 from by
-      simp at this
       rw [sub_eq_add_neg] at this
-      rw [← zero_add (g a c)]
-      rw [add_eq_of_eq_add_neg]
+      rw [← zero_add (g a c), add_eq_of_eq_add_neg]
       exact this.symm
     rw [← prop_d, prop_c, important, hb.right]
+
   /-
   **The "Ring Tactic" must be use on a CommRing, there is no efficient Tactic if on none CommRing**
   **And the progress is a piece of SHIT**
@@ -198,25 +144,24 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
       _ = a⁻¹ * (a * d) := by simp only [sub_add_cancel]
       _ = (a⁻¹ * a) * d := by rw [@NonUnitalRing.mul_assoc]
       _ = _ := by simp only [a_inv, one_mul]
-  have : ∃ r ≥ 0, d ^ (p ^ r) ∈ k := by
 
-    sorry -- he
-  obtain ⟨r, hr, hd⟩ := this
+  obtain ⟨r, hr⟩ := (l1 p d hinsep)
   have eq : d ^ (p ^ r) = 1 + d ^ (p ^ r) := by
     calc
       _ = (1 + a⁻¹ * d * a) ^ (p ^ r) := by
 
         sorry
       _ = 1 ^ (p ^ r) + (a⁻¹ * d * a) ^ (p ^ r) := by
-
+        rw [add_pow_char_pow_of_commute D 1 (a⁻¹ * d * a) (Commute.one_left (a⁻¹ * d * a))]
+      _ = 1 + a⁻¹ * d ^ (p ^ r) * a := by
         sorry
-      _ = 1 + a⁻¹ * d ^ (p ^ r) * a := sorry
       _ = _ := sorry
   simp only [self_eq_add_left, one_ne_zero] at eq
 
-theorem Jacobson_Noether [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
+
+theorem Jacobson_Noether [Algebra.IsAlgebraic k D] (h : k ≠ (⊤ : Subring D)) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   obtain ⟨p, hp⟩ := CharP.exists D
   rcases @CharP.char_is_prime_or_zero D _ _ _ p _ with h1 | h2
-  · exact @aux2 D _ p ⟨h1⟩ _ _ h
-  exact @aux1 D _ (CharP.congr p h2) _ h
+  · exact @thm_char_p D _ p ⟨h1⟩ _ _ h
+  exact @thm_char_zero D _ (CharP.congr p h2) _ h
