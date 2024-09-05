@@ -10,15 +10,37 @@ variable {D : Type*} [DivisionRing D]
 
 local notation "k" => (Subring.center D)
 
-theorem aux0 [CharP D p] :
+lemma aux0 [CharP D p] :
   ∀ a : D, a ∉ k → ∃ m ≥ 1, a ^ (p ^ m) ∈ k := sorry
 
-def δ (a : D) : D → D := fun x ↦ a * x - x * a
+def f (a : D) : D →ₗ[k] D := {
+  toFun := fun x ↦ a * x
+  map_add' := fun x y ↦ LeftDistribClass.left_distrib a x y
+  map_smul' := by
+    intro m x
+    simp only [Algebra.mul_smul_comm, RingHom.id_apply]
+}
 
-theorem finial_aux [CharP D p] (a : D) (a_nin_k : a ∉ k) :
-  ∃ m ≥ 1, ∀ n ≥ (p ^ m), (δ a) ^[n] = 0 := by sorry
+def g (a : D) : D →ₗ[k] D := {
+  toFun := fun x ↦ x * a
+  map_add' := fun x y ↦ RightDistribClass.right_distrib x y a
+  map_smul' := by
+    intro m x
+    simp only [Algebra.smul_mul_assoc, RingHom.id_apply]
+}
 
+def δ (a : D) : D →ₗ[k] D := {
+  toFun := f a - g a
+  map_add' := by
+    intro x y
+    simp only [Pi.sub_apply, map_add, add_sub_add_comm]
+  map_smul' := by
+    intro m x
+    simp only [Pi.sub_apply, map_smul, RingHom.id_apply, smul_sub]
+}
 
+lemma final_aux [CharP D p] (a : D) (a_nin_k : a ∉ k) :
+  ∃ m ≥ 1, ∀ n ≥ (p ^ m), (δ a) ^ n = 0 := sorry
 
 theorem choose_element_in_complementary_set [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
   by_contra nt
@@ -61,25 +83,25 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
       exact Semigroup.mem_center_iff.mpr (fun g ↦ Eq.symm (SemiconjBy.eq (this g)))
     contradiction
 
-  have : ∃ n > 0, ∃ b : D , (δ a) ^[n] b ≠ 0 ∧ (δ a) ^[n + 1] b = 0 := by
+  have : ∃ n > 0, ∃ b : D , ((δ a) ^ n) b ≠ 0 ∧ ((δ a) ^ (n + 1)) b = 0 := by
     obtain ⟨b, hb1⟩ := a_not_commute
-    have : ∃ m ≥ 1, ∀ n ≥ (p ^ m), (δ a) ^[n] = 0 := finial_aux a ha
+    have : ∃ m ≥ 1, ∀ n ≥ (p ^ m), (δ a) ^ n = 0 := final_aux a ha
     rcases this with ⟨m, hm1, hm2⟩
-    have exist : ∃ n > 0, (δ a) ^[n + 1] b = 0 := by
+    have exist : ∃ n > 0, ((δ a) ^ (n + 1)) b = 0 := by
       use p ^ m
       constructor
       · exact Fin.size_pos'
-      · have : (δ a) ^[p ^ m + 1] = 0 := by
+      · have : (δ a) ^ (p ^ m + 1) = 0 := by
           apply hm2 _
           linarith
-        exact congrFun this b
+        rw [this]; rfl
     have ⟨hex1, hex2⟩ := (Nat.find_spec exist)
     use Nat.find exist
     simp only [gt_iff_lt, Function.iterate_succ, Function.comp_apply, hex1, ne_eq, true_and]
     use b
     constructor
     · let t := (Nat.find exist - 1 : ℕ)
-      have : ¬(t > 0 ∧ (δ a)^[t + 1] b = 0) :=
+      have : ¬(t > 0 ∧ ((δ a) ^ (t + 1)) b = 0) :=
         have this : t < Nat.find exist := Nat.sub_one_lt_of_lt hex1
         (Nat.find_min exist) this
       have ht : t + 1 = Nat.find exist := Nat.sub_add_cancel hex1
@@ -93,7 +115,7 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
     · exact hex2
 
   obtain ⟨n, hn, b, hb⟩ := this
-  let c := (δ a) ^[n] b
+  let c := ((δ a) ^ n) b
   letI : Invertible c := by
     have cne0 : c ≠ 0 := by
       exact hb.left
@@ -114,9 +136,11 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
       exact this.symm
     have ddd : (δ a) c = (f a - g a) c := rfl
     rw [← ddd]
-    have ccc : c = (δ a) ^[n] b := rfl
+    have ccc : c = ((δ a) ^ n) b := rfl
     rw [ccc]
-    have ttt : δ a ((δ a)^[n] b) = (δ a)^[n + 1] b := Eq.symm (Function.iterate_succ_apply' (δ a) n b)
+    have ttt : δ a (((δ a) ^ n) b) = ((δ a) ^ (n + 1)) b := by
+      rw [LinearMap.pow_apply, LinearMap.pow_apply, ← Nat.succ_eq_add_one]
+      exact Eq.symm (Function.iterate_succ_apply' (δ a) n b)
     rw [ttt, hb.right]
 
   let d := c⁻¹ * a * (δ a) ^[n-1] b
