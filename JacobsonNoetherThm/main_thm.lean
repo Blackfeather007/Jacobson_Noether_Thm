@@ -4,18 +4,24 @@ import Mathlib.FieldTheory.Separable
 import Mathlib.FieldTheory.Perfect
 import Mathlib.Algebra.CharP.Subring
 
+-- set_option diagnostics true
 
 variable {D : Type*} [DivisionRing D]
 
 local notation "k" => (Subring.center D)
 
 
-theorem aux1 [CharP D 0] [Algebra.IsAlgebraic k D] (h : D ≠ k) :
+theorem aux1 [CharP D 0] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   letI : CharZero k := (CharP.charP_zero_iff_charZero k).mp (by infer_instance)
   have : ∃ a : D, a ∉ k := by
-
-    sorry
+    by_contra nt
+    push_neg at nt
+    have : k ≥ (⊤ : Subring D) := fun ⦃x⦄ a ↦ nt x
+    have : k ≤ (⊤ : Subring D) := fun ⦃x⦄ a ↦ trivial
+    have : k = (⊤ : Subring D) := (Subring.eq_top_iff' (Subring.center D)).mpr nt
+    rw [this] at h
+    contradiction
   obtain ⟨a, ha⟩ := this
   use a
   constructor
@@ -29,12 +35,12 @@ theorem aux1 [CharP D 0] [Algebra.IsAlgebraic k D] (h : D ≠ k) :
 
 
 
-theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h : D ≠ k) :
+theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x :=
   sorry
 
 
-theorem Jacobson_Noether [Algebra.IsAlgebraic k D] (h : D ≠ k) :
+theorem Jacobson_Noether [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   obtain ⟨p, hp⟩ := CharP.exists D
   rcases @CharP.char_is_prime_or_zero D _ _ _ p _ with h1 | h2
