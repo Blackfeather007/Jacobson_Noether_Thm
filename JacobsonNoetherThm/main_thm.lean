@@ -10,18 +10,20 @@ variable {D : Type*} [DivisionRing D]
 
 local notation "k" => (Subring.center D)
 
+lemma JWC_very_cute [CharP D 0] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
+  by_contra nt
+  push_neg at nt
+  have : k ≥ (⊤ : Subring D) := fun ⦃x⦄ _ ↦ nt x
+  have : k ≤ (⊤ : Subring D) := fun ⦃x⦄ _ ↦ trivial
+  have : k = (⊤ : Subring D) := (Subring.eq_top_iff' (Subring.center D)).mpr nt
+  rw [this] at h
+  contradiction
+
 
 theorem aux1 [CharP D 0] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   letI : CharZero k := (CharP.charP_zero_iff_charZero k).mp (by infer_instance)
-  have : ∃ a : D, a ∉ k := by
-    by_contra nt
-    push_neg at nt
-    have : k ≥ (⊤ : Subring D) := fun ⦃x⦄ a ↦ nt x
-    have : k ≤ (⊤ : Subring D) := fun ⦃x⦄ a ↦ trivial
-    have : k = (⊤ : Subring D) := (Subring.eq_top_iff' (Subring.center D)).mpr nt
-    rw [this] at h
-    contradiction
+  have : ∃ a : D, a ∉ k := by exact JWC_very_cute h
   obtain ⟨a, ha⟩ := this
   use a
   constructor
