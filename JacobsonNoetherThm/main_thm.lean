@@ -11,7 +11,7 @@ variable {D : Type*} [DivisionRing D]
 
 local notation "k" => (Subring.center D)
 
-lemma JWC_very_cute [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
+theorem JWC_very_cute [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
   by_contra nt
   push_neg at nt
   have : k ≥ (⊤ : Subring D) := fun ⦃x⦄ _ ↦ nt x
