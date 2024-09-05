@@ -1,14 +1,17 @@
 import JacobsonNoetherThm.AlgebraInstance
+import JacobsonNoetherThm.CharPAux
 import Mathlib.RingTheory.Algebraic
 import Mathlib.FieldTheory.Separable
 import Mathlib.FieldTheory.Perfect
 import Mathlib.Algebra.CharP.Subring
 
+open Classical
+
 variable {D : Type*} [DivisionRing D]
 
 local notation "k" => (Subring.center D)
 
-lemma JWC_very_cute [CharP D 0] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
+lemma JWC_very_cute [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
   by_contra nt
   push_neg at nt
   have : k ≥ (⊤ : Subring D) := fun ⦃x⦄ _ ↦ nt x
