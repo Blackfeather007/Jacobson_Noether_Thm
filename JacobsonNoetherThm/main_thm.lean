@@ -1,16 +1,14 @@
 import JacobsonNoetherThm.AlgebraInstance
-import JacobsonNoetherThm.CharPAux
 import Mathlib.RingTheory.Algebraic
 import Mathlib.FieldTheory.Separable
 import Mathlib.FieldTheory.Perfect
 import Mathlib.Algebra.CharP.Subring
 
-
 variable {D : Type*} [DivisionRing D]
 
 local notation "k" => (Subring.center D)
 
-theorem JWC_very_cute [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
+lemma JWC_very_cute [CharP D 0] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
   by_contra nt
   push_neg at nt
   have : k ≥ (⊤ : Subring D) := fun ⦃x⦄ _ ↦ nt x
@@ -33,6 +31,8 @@ theorem aux1 [CharP D 0] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k)
       apply minpoly.irreducible
       exact Algebra.IsIntegral.isIntegral a
     exact this
+
+
 
 
 theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
