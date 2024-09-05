@@ -37,6 +37,4 @@ lemma finial_aux [CharP D p] (a : D) (a_nin_k : a ∉ k) :
       funext x
       -- #check sub_pow_char_pow D (a * x)
       sorry
-    apply congrFun at inter2
-
     sorry
