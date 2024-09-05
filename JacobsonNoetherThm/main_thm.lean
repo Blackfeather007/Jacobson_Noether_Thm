@@ -1,14 +1,16 @@
 import JacobsonNoetherThm.AlgebraInstance
+import JacobsonNoetherThm.CharPAux
 import Mathlib.RingTheory.Algebraic
 import Mathlib.FieldTheory.Separable
 import Mathlib.FieldTheory.Perfect
 import Mathlib.Algebra.CharP.Subring
 
+
 variable {D : Type*} [DivisionRing D]
 
 local notation "k" => (Subring.center D)
 
-lemma JWC_very_cute [CharP D 0] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
+theorem JWC_very_cute [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
   by_contra nt
   push_neg at nt
   have : k ≥ (⊤ : Subring D) := fun ⦃x⦄ _ ↦ nt x
@@ -33,10 +35,25 @@ theorem aux1 [CharP D 0] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k)
     exact this
 
 
-
-
 theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
-    ∃ x : D, x ∉ k ∧ IsSeparable k x :=
+    ∃ x : D, x ∉ k ∧ IsSeparable k x := by
+  by_contra! insep
+  obtain ⟨a, ha⟩ := JWC_very_cute h
+  have : ∃ n ≥ 1, ∃ b : D, b ^ n ≠ 0 ∧ b ^ (n + 1) = 0 := by
+    --yy
+    sorry
+
+  obtain ⟨n, hn, b, hb⟩ := this
+  let c := (δ a) ^[n] b
+  letI : Invertible c := by sorry
+  have hc : c * a = a * c := sorry
+  -- j
+  let d := c⁻¹ * a * (δ a) ^[n-1] b
+
+  have : ∃ r ≥ 1, d ^ (p ^ r) ∈ k := by sorry -- he
+  obtain ⟨r, hr, hd⟩ := this
+  --yy
+  have eq : d ^ (p ^ r) = 1 + d ^ (p ^ r) := sorry
   sorry
 
 
