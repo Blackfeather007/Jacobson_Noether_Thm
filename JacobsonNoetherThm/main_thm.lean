@@ -16,24 +16,7 @@ theorem aux0 [CharP D p] :
 def δ (a : D) : D → D := fun x ↦ a * x - x * a
 
 theorem finial_aux [CharP D p] (a : D) (a_nin_k : a ∉ k) :
-  ∃ m ≥ 1, ∀ n ≥ (p ^ m), (δ ^ n) a = 0 := by
-  -- letI : CharP k p := inferInstance
-  obtain ⟨m, hm⟩ := aux0 a a_nin_k (p := p)
-  use m
-  constructor
-  · exact hm.1
-  · intro n hn
-    let f (a : D) : D → D := fun x ↦ a * x
-    let g (a : D) : D → D := fun x ↦ x * a
-    have delta : δ a = f a - g a := rfl
-    have inter1 : (f a) ∘ (g a) = (g a) ∘ (f a) := by
-      funext x
-      dsimp [f, g]; exact Eq.symm (mul_assoc a x a)
-    have inter2 : (δ ^ (p ^ m)) a = ((f ^ (p ^ m)) a) - ((g ^ (p ^ m)) a) := by
-      funext x
-      -- #check sub_pow_char_pow D (a * x)
-      sorry
-    sorry
+  ∃ m ≥ 1, ∀ n ≥ (p ^ m), (δ a) ^[n] = 0 := by sorry
 
 
 
@@ -49,7 +32,7 @@ theorem choose_element_in_complementary_set [Algebra.IsAlgebraic k D] (h : (⊤ 
 theorem aux1 [CharP D 0] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   letI : CharZero k := (CharP.charP_zero_iff_charZero k).mp (by infer_instance)
-  have : ∃ a : D, a ∉ k := by exact choose_element_in_complementary_set h
+  have : ∃ a : D, a ∉ k := choose_element_in_complementary_set h
   obtain ⟨a, ha⟩ := this
   use a
   constructor
@@ -69,20 +52,16 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
     push_neg at nh
     have : ∀ x : D, (δ a) x = a * x - x * a := fun x ↦ rfl
     have : a ∈ k := by
-      have : ∀ x : D, a* x = x * a :=sorry
-      refine Subring.mem_carrier.mp ?_
-      unfold Subring.center
-      dsimp
-      refine Semigroup.mem_center_iff.mpr ?_
-      exact fun g ↦ Eq.symm (SemiconjBy.eq (this g))
-    sorry
-
-
+      have : ∀ x : D, a * x = x * a := by
+        intro x
+        have : a * x - x * a = 0 := congrFun (nh a) x
+        calc
+          _ = (a * x - x * a) + x * a := by simp only [sub_add_cancel]
+          _ = _ := by simp only [this, zero_add]
+      exact Semigroup.mem_center_iff.mpr (fun g ↦ Eq.symm (SemiconjBy.eq (this g)))
+    contradiction
 
   have : ∃ n ≥ 1,∃ b : D , (δ a) ^[n] b ≠ 0 ∧ (δ a) ^[n + 1] b = 0 := by
-
-    --yy
-
     sorry
 
   obtain ⟨n, hn, b, hb⟩ := this
