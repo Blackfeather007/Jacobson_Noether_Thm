@@ -1,5 +1,4 @@
 import JacobsonNoetherThm.AlgebraInstance
-import JacobsonNoetherThm.CharPAux
 import Mathlib.RingTheory.Algebraic
 import Mathlib.FieldTheory.Separable
 import Mathlib.FieldTheory.Perfect
@@ -11,7 +10,34 @@ variable {D : Type*} [DivisionRing D]
 
 local notation "k" => (Subring.center D)
 
-theorem JWC_very_cute [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
+theorem aux0 [CharP D p] :
+  ∀ a : D, a ∉ k → ∃ m ≥ 1, a ^ (p ^ m) ∈ k := sorry
+
+def δ (a : D) : D → D := fun x ↦ a * x - x * a
+
+theorem finial_aux [CharP D p] (a : D) (a_nin_k : a ∉ k) :
+  ∃ m ≥ 1, ∀ n ≥ (p ^ m), (δ ^ n) a = 0 := by
+  -- letI : CharP k p := inferInstance
+  obtain ⟨m, hm⟩ := aux0 a a_nin_k (p := p)
+  use m
+  constructor
+  · exact hm.1
+  · intro n hn
+    let f (a : D) : D → D := fun x ↦ a * x
+    let g (a : D) : D → D := fun x ↦ x * a
+    have delta : δ a = f a - g a := rfl
+    have inter1 : (f a) ∘ (g a) = (g a) ∘ (f a) := by
+      funext x
+      dsimp [f, g]; exact Eq.symm (mul_assoc a x a)
+    have inter2 : (δ ^ (p ^ m)) a = ((f ^ (p ^ m)) a) - ((g ^ (p ^ m)) a) := by
+      funext x
+      -- #check sub_pow_char_pow D (a * x)
+      sorry
+    sorry
+
+
+
+theorem choose_element_in_complementary_set [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : ∃ a : D, a ∉ k := by
   by_contra nt
   push_neg at nt
   have : k ≥ (⊤ : Subring D) := fun ⦃x⦄ _ ↦ nt x
@@ -20,11 +46,10 @@ theorem JWC_very_cute [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) : 
   rw [this] at h
   contradiction
 
-
 theorem aux1 [CharP D 0] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   letI : CharZero k := (CharP.charP_zero_iff_charZero k).mp (by infer_instance)
-  have : ∃ a : D, a ∉ k := by exact JWC_very_cute h
+  have : ∃ a : D, a ∉ k := by exact choose_element_in_complementary_set h
   obtain ⟨a, ha⟩ := this
   use a
   constructor
@@ -35,14 +60,27 @@ theorem aux1 [CharP D 0] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k)
       exact Algebra.IsIntegral.isIntegral a
     exact this
 
-
-
-
 theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   by_contra! insep
-  obtain ⟨a, ha⟩ := JWC_very_cute h
-  have : ∃ n ≥ 1, ∃ b : D, (δ a) ^[n] b ≠ 0 ∧ (δ a) ^[n + 1] b = 0 := by
+  obtain ⟨a, ha⟩ := choose_element_in_complementary_set h
+  have a_not_commute : ∃ b : D , δ b ≠ 0 := by
+    by_contra nh
+    push_neg at nh
+    have : ∀ x : D, (δ a) x = a * x - x * a := fun x ↦ rfl
+    have : a ∈ k := by
+      have : ∀ x : D, a* x = x * a :=sorry
+      refine Subring.mem_carrier.mp ?_
+      unfold Subring.center
+      dsimp
+      refine Semigroup.mem_center_iff.mpr ?_
+      exact fun g ↦ Eq.symm (SemiconjBy.eq (this g))
+    sorry
+
+
+
+  have : ∃ n ≥ 1,∃ b : D , (δ a) ^[n] b ≠ 0 ∧ (δ a) ^[n + 1] b = 0 := by
+
     --yy
 
     sorry
@@ -56,6 +94,8 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
     · exact inv_mul_cancel₀ cne0
     · exact mul_inv_cancel₀ cne0
   have hc : c * a = a * c := by
+    let f (a : D) : D → D := fun x ↦ a * x
+    let g (a : D) : D → D := fun x ↦ x * a
     have fff : (f a) c = a * c := rfl
     have ggg : (g a) c = c * a := rfl
     rw [← fff, ← ggg]
