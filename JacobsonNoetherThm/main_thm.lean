@@ -204,13 +204,29 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
   obtain ⟨r, hr, hd⟩ := this
   have eq : d ^ (p ^ r) = 1 + d ^ (p ^ r) := by
     calc
-      _ = (1 + a⁻¹ * d * a) ^ (p ^ r) := by
-
-        sorry
+      _ = (1 + a⁻¹ * d * a) ^ (p ^ r) := by rw [this]
       _ = 1 ^ (p ^ r) + (a⁻¹ * d * a) ^ (p ^ r) := by
-
+        rw [add_pow_char_pow_of_commute]
+        exact Commute.one_left (a⁻¹ * d * a)
+      _ = 1 + a⁻¹ * d ^ (p ^ r) * a := by
+        simp only [one_pow, add_right_inj]
+        have (s : ℕ): a⁻¹ * d ^ s * a = (a⁻¹ * d * a) ^ s := by
+          induction' s with s ih
+          · simp only [pow_zero, mul_one, a_inv]
+          · symm
+            calc
+              _ = (a⁻¹ * d * a) ^ s * (a⁻¹ * d * a) := by
+                rw [@npow_add]
+                simp only [pow_one]
+              _ = a⁻¹ * d ^ s * a * (a⁻¹ * d * a) := by rw [ih]
+              _ = a⁻¹ * d ^ s * (a * a⁻¹) * d * a := by
+    --       simp only [mul_left_inj, mul_right_inj]
+    --       exact pow_succ (b * a * b⁻¹) n
+    --     _ = b⁻¹ * (b * a * b⁻¹) ^ n * b * (a * b⁻¹ * b) := by group
+    --     --Then use the Induction hypothesis and we have it $= a ^ n * (a * b⁻¹ * b) = a ^ {n + 1}$
+    --     _ = a ^ n * (a * b⁻¹ * b):= by rw [ih]
+    --     _ = _ := by group
         sorry
-      _ = 1 + a⁻¹ * d ^ (p ^ r) * a := sorry
       _ = _ := sorry
   simp only [self_eq_add_left, one_ne_zero] at eq
 
