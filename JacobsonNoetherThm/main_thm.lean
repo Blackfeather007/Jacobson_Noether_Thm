@@ -4,8 +4,6 @@ import Mathlib.FieldTheory.Separable
 import Mathlib.FieldTheory.Perfect
 import Mathlib.Algebra.CharP.Subring
 
--- set_option diagnostics true
-
 variable {D : Type*} [DivisionRing D]
 
 local notation "k" => (Subring.center D)
