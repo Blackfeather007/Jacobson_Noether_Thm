@@ -119,16 +119,23 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
     have ttt : δ a ((δ a)^[n] b) = (δ a)^[n + 1] b := Eq.symm (Function.iterate_succ_apply' (δ a) n b)
     rw [ttt, hb.right]
 
-
-  -- j
   let d := c⁻¹ * a * (δ a) ^[n-1] b
 
-  have : ∃ r ≥ 1, d ^ (p ^ r) ∈ k := by sorry -- he
-  obtain ⟨r, hr, hd⟩ := this
-  --yy
-  have eq : d ^ (p ^ r) = 1 + d ^ (p ^ r) := sorry
-  sorry
+  have : ∃ r ≥ 1, d ^ (p ^ r) ∈ k := by
 
+    sorry -- he
+  obtain ⟨r, hr, hd⟩ := this
+  have eq : d ^ (p ^ r) = 1 + d ^ (p ^ r) := by
+    calc
+      _ = (1 + a⁻¹ * d * a) ^ (p ^ r) := by
+
+        sorry
+      _ = 1 ^ (p ^ r) + (a⁻¹ * d * a) ^ (p ^ r) := by
+
+        sorry
+      _ = 1 + a⁻¹ * d ^ (p ^ r) * a := sorry
+      _ = _ := sorry
+  simp only [self_eq_add_left, one_ne_zero] at eq
 
 theorem Jacobson_Noether [Algebra.IsAlgebraic k D] (h : (⊤ : Subring D) ≠ k) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
