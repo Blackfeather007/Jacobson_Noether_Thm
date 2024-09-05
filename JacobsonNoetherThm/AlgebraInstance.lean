@@ -1,6 +1,5 @@
 import Mathlib.Algebra.Ring.Subring.Basic
-import Mathlib
-
+import Mathlib.Algebra.Algebra.Defs
 
 variable {R : Type*} [DivisionRing R]
 
