@@ -37,5 +37,3 @@ lemma finial_aux [ExpChar k p] (a : D) (a_nin_k : a ∉ k) :
 
       sorry
     sorry
-
-  sorry
