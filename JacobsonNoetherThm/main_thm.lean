@@ -122,7 +122,7 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
     use c⁻¹
     · exact inv_mul_cancel₀ cne0
     · exact mul_inv_cancel₀ cne0
-  have important : δ a (((δ a) ^ n) b) = ((δ a) ^ (n + 1)) b := by
+  have important (n): δ a (((δ a) ^ n) b) = ((δ a) ^ (n + 1)) b := by
     rw [LinearMap.pow_apply, LinearMap.pow_apply, ← Nat.succ_eq_add_one]
     exact Eq.symm (Function.iterate_succ_apply' (δ a) n b)
   have hc : c * a = a * c := by
@@ -157,10 +157,14 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
   have c_def : c = ((δ a) ^ n) b := rfl
   have c_eq : a * (δ a) ^[n - 1] b - (δ a) ^[n - 1] b * a = c := by
     rw [c_def]
-    have : (δ a ^ n) b = (δ a) ((δ a)^[n - 1] b) := by sorry
+    have : (δ a) ^[n - 1] b = ((δ a) ^ (n - 1)) b :=
+      Eq.symm (LinearMap.pow_apply (δ a) (n - 1) b)
     rw [this]
-
-    sorry
+    have : (n - 1) + 1 = n := by exact Nat.sub_add_cancel hn
+    rw [← this]
+    have : (δ a ^ (n - 1 + 1)) b = (δ a) ((δ a ^ (n - 1)) b) := by rw [important]
+    rw [this]
+    rfl
   have eq1 : c⁻¹ * a * (δ a)^[n - 1] b - c⁻¹ * (δ a)^[n - 1] b * a = 1 := by
     calc
       _ = c⁻¹ * (a * (δ a)^[n - 1] b) - c⁻¹ * ((δ a)^[n - 1] b * a) := by simp_rw [@NonUnitalRing.mul_assoc]
