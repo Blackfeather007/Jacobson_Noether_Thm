@@ -123,6 +123,8 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
     · exact inv_mul_cancel₀ cne0
     · exact mul_inv_cancel₀ cne0
   have hc : c * a = a * c := by
+    let f (a : D) : D → D := fun x ↦ a * x
+    let g (a : D) : D → D := fun x ↦ x * a
     have fff : (f a) c = a * c := rfl
     have ggg : (g a) c = c * a := rfl
     rw [← fff, ← ggg]
@@ -140,10 +142,37 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
       rw [LinearMap.pow_apply, LinearMap.pow_apply, ← Nat.succ_eq_add_one]
       exact Eq.symm (Function.iterate_succ_apply' (δ a) n b)
     rw [ttt, hb.right]
+  /-
+  **The "Ring Tactic" must be use on a CommRing, there is no efficient Tactic if on none CommRing**
+  **And the progress is a piece of SHIT**
+  **I use so many "rw" Tactic similar to the beginning learning of Lean**
+  -/
+  let d := c⁻¹ * a * (δ a) ^[n-1] b
+  have hc': c⁻¹ * a = a * c⁻¹ := by
+    calc
+      _ = c⁻¹ * a * (c * c⁻¹) := by simp only [mul_inv_cancel_of_invertible, mul_one]
+      _ = c⁻¹ * (a * c) * c⁻¹ := by simp_rw [@NonUnitalRing.mul_assoc]
+      _ = c⁻¹ * (c * a) * c⁻¹ := by rw [hc]
+      _ = (c⁻¹ * c) * a * c⁻¹ := by simp_rw [@NonUnitalRing.mul_assoc]
+      _ = _ := by simp only [inv_mul_cancel_of_invertible, one_mul]
+  have d_def : d = c⁻¹ * a * (δ a) ^[n-1] b := rfl
+  have eq1 : c⁻¹ * a * (δ a)^[n - 1] b - c⁻¹ * (δ a)^[n - 1] b * a = 1 := by
+    calc
+      _ = c⁻¹ * (a * (δ a)^[n - 1] b) - c⁻¹ * ((δ a)^[n - 1] b * a) := by simp_rw [@NonUnitalRing.mul_assoc]
+      _ = c * ((a * (δ a)^[n - 1] b - (δ a)^[n - 1] b * a)) := by
 
-  let d := c⁻¹ * a * ((δ a) ^ (n - 1)) b
+        sorry
 
-  have : ∃ r ≥ 1, d ^ (p ^ r) ∈ k := by
+  have deq : a * d - d * a = a := by
+    calc
+      _ = a * (c⁻¹ * a * (δ a)^[n - 1] b) - (c⁻¹ * a * (δ a)^[n - 1] b) * a := by rw [d_def]
+      _ = a * (c⁻¹ * a * (δ a)^[n - 1] b) - a * c⁻¹ * (δ a)^[n - 1] b * a := by rw [hc']
+      _ = a * (c⁻¹ * a * (δ a)^[n - 1] b) - a * (c⁻¹ * (δ a)^[n - 1] b * a) := by simp_rw [@NonUnitalRing.mul_assoc]
+      _ = a * ((c⁻¹ * a * (δ a)^[n - 1] b) - (c⁻¹ * (δ a)^[n - 1] b * a)) := Eq.symm (mul_sub_left_distrib a _ _)
+      _ = _ := by
+        rw [eq1]
+        simp only [mul_one]
+  have : ∃ r ≥ 0, d ^ (p ^ r) ∈ k := by
 
     sorry -- he
   obtain ⟨r, hr, hd⟩ := this
