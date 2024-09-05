@@ -1,6 +1,7 @@
 import Mathlib.Algebra.Ring.Subring.Basic
 import Mathlib.Algebra.Algebra.Defs
 import Mathlib.RingTheory.Algebraic
+-- import Mathlib.FieldTheory.Separable
 
 variable {R : Type*} [DivisionRing R]
 
@@ -14,6 +15,6 @@ instance : Algebra (Subring.center R) R := by
 instance : Field (Subring.center R) := by
   exact Subring.instField
 
-example [Algebra.IsAlgebraic (Subring.center R) R] : CharZero (Subring.center R) → IsSeparable (Subring.center R) R := by
-  intro h
-  refine isSeparable_iff.mpr ?_
+-- example [Algebra.IsAlgebraic (Subring.center R) R] : CharZero (Subring.center R) → IsSeparable (Subring.center R) R := by
+--   intro h
+--   refine isSeparable_iff.mpr ?_
