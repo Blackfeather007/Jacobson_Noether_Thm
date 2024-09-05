@@ -39,8 +39,9 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   by_contra! insep
   obtain ⟨a, ha⟩ := JWC_very_cute h
-  have : ∃ n ≥ 1, ∃ b : D, b ^ n ≠ 0 ∧ b ^ (n + 1) = 0 := by
+  have : ∃ n ≥ 1, ∃ b : D, (δ ^ n) b ≠ 0 ∧ (δ ^ (n + 1)) b = 0 := by
     --yy
+
     sorry
 
   obtain ⟨n, hn, b, hb⟩ := this
