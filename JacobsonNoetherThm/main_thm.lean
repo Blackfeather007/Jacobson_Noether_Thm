@@ -231,6 +231,7 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
                 simp only [mul_eq_mul_right_iff, mul_eq_mul_left_iff, inv_eq_zero, or_self_right]
                 left
                 exact Eq.symm (pow_succ d s)
+        exact Eq.symm (CancelDenoms.derive_trans rfl (this (p ^ r)))
       _ = _ := by
         simp only [add_right_inj]
         have : a * d ^ p ^ r = d ^ p ^ r * a := Eq.symm (hd.comm a)
