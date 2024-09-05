@@ -122,26 +122,24 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
     use c⁻¹
     · exact inv_mul_cancel₀ cne0
     · exact mul_inv_cancel₀ cne0
+  have important : δ a (((δ a) ^ n) b) = ((δ a) ^ (n + 1)) b := by
+    rw [LinearMap.pow_apply, LinearMap.pow_apply, ← Nat.succ_eq_add_one]
+    exact Eq.symm (Function.iterate_succ_apply' (δ a) n b)
   have hc : c * a = a * c := by
     let f (a : D) : D → D := fun x ↦ a * x
     let g (a : D) : D → D := fun x ↦ x * a
-    have fff : (f a) c = a * c := rfl
-    have ggg : (g a) c = c * a := rfl
-    rw [← fff, ← ggg]
+    have f_def : (f a) c = a * c := rfl
+    have g_def : (g a) c = c * a := rfl
+    have prop_d : (δ a) c = (f a - g a) c := rfl
+    have prop_c : c = ((δ a) ^ n) b := rfl
+    rw [← f_def, ← g_def]
     suffices (f a - g a) c = 0 from by
       simp at this
       rw [sub_eq_add_neg] at this
       rw [← zero_add (g a c)]
       rw [add_eq_of_eq_add_neg]
       exact this.symm
-    have ddd : (δ a) c = (f a - g a) c := rfl
-    rw [← ddd]
-    have ccc : c = ((δ a) ^ n) b := rfl
-    rw [ccc]
-    have ttt : δ a (((δ a) ^ n) b) = ((δ a) ^ (n + 1)) b := by
-      rw [LinearMap.pow_apply, LinearMap.pow_apply, ← Nat.succ_eq_add_one]
-      exact Eq.symm (Function.iterate_succ_apply' (δ a) n b)
-    rw [ttt, hb.right]
+    rw [← prop_d, prop_c, important, hb.right]
   /-
   **The "Ring Tactic" must be use on a CommRing, there is no efficient Tactic if on none CommRing**
   **And the progress is a piece of SHIT**
@@ -156,12 +154,19 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
       _ = (c⁻¹ * c) * a * c⁻¹ := by simp_rw [@NonUnitalRing.mul_assoc]
       _ = _ := by simp only [inv_mul_cancel_of_invertible, one_mul]
   have d_def : d = c⁻¹ * a * (δ a) ^[n-1] b := rfl
+  have c_def : c = ((δ a) ^ n) b := rfl
+  have c_eq : a * (δ a) ^[n - 1] b - (δ a) ^[n - 1] b * a = c := by
+    rw [c_def]
+    have : (δ a ^ n) b = (δ a) ((δ a)^[n - 1] b) := by sorry
+    rw [this]
+
+    sorry
   have eq1 : c⁻¹ * a * (δ a)^[n - 1] b - c⁻¹ * (δ a)^[n - 1] b * a = 1 := by
     calc
       _ = c⁻¹ * (a * (δ a)^[n - 1] b) - c⁻¹ * ((δ a)^[n - 1] b * a) := by simp_rw [@NonUnitalRing.mul_assoc]
-      _ = c * ((a * (δ a)^[n - 1] b - (δ a)^[n - 1] b * a)) := by
-
-        sorry
+      _ = c⁻¹ * (a * (δ a)^[n - 1] b - (δ a)^[n - 1] b * a) := Eq.symm (mul_sub_left_distrib c⁻¹ _ _)
+      _ = c⁻¹ * c := by rw [c_eq]
+      _ = _ := by simp only [inv_mul_cancel_of_invertible]
 
   have deq : a * d - d * a = a := by
     calc
