@@ -39,15 +39,37 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   by_contra! insep
   obtain ⟨a, ha⟩ := JWC_very_cute h
-  have : ∃ n ≥ 1, ∃ b : D, (δ ^ n) b ≠ 0 ∧ (δ ^ (n + 1)) b = 0 := by
+  have : ∃ n ≥ 1, ∃ b : D, (δ a) ^[n] b ≠ 0 ∧ (δ a) ^[n + 1] b = 0 := by
     --yy
 
     sorry
 
   obtain ⟨n, hn, b, hb⟩ := this
   let c := (δ a) ^[n] b
-  letI : Invertible c := by sorry
-  have hc : c * a = a * c := sorry
+  letI : Invertible c := by
+    have cne0 : c ≠ 0 := by
+      exact hb.left
+    use c⁻¹
+    · exact inv_mul_cancel₀ cne0
+    · exact mul_inv_cancel₀ cne0
+  have hc : c * a = a * c := by
+    have fff : (f a) c = a * c := rfl
+    have ggg : (g a) c = c * a := rfl
+    rw [← fff, ← ggg]
+    suffices (f a - g a) c = 0 from by
+      simp at this
+      rw [sub_eq_add_neg] at this
+      rw [← zero_add (g a c)]
+      rw [add_eq_of_eq_add_neg]
+      exact this.symm
+    have ddd : (δ a) c = (f a - g a) c := rfl
+    rw [← ddd]
+    have ccc : c = (δ a) ^[n] b := rfl
+    rw [ccc]
+    have ttt : δ a ((δ a)^[n] b) = (δ a)^[n + 1] b := Eq.symm (Function.iterate_succ_apply' (δ a) n b)
+    rw [ttt, hb.right]
+
+
   -- j
   let d := c⁻¹ * a * (δ a) ^[n-1] b
 
