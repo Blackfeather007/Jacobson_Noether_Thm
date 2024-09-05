@@ -123,8 +123,6 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
     · exact inv_mul_cancel₀ cne0
     · exact mul_inv_cancel₀ cne0
   have hc : c * a = a * c := by
-    let f (a : D) : D → D := fun x ↦ a * x
-    let g (a : D) : D → D := fun x ↦ x * a
     have fff : (f a) c = a * c := rfl
     have ggg : (g a) c = c * a := rfl
     rw [← fff, ← ggg]
@@ -143,7 +141,7 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
       exact Eq.symm (Function.iterate_succ_apply' (δ a) n b)
     rw [ttt, hb.right]
 
-  let d := c⁻¹ * a * (δ a) ^[n-1] b
+  let d := c⁻¹ * a * ((δ a) ^ (n - 1)) b
 
   have : ∃ r ≥ 1, d ^ (p ^ r) ∈ k := by
 
