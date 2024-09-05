@@ -181,24 +181,23 @@ theorem aux2 {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h :
       _ = _ := by
         rw [eq1]
         simp only [mul_one]
+  have a_inv : a⁻¹ * a = 1 := by
+    refine inv_mul_cancel₀ ?h
+    by_contra nh
+    rw [nh] at ha
+    have : 0 ∈ Subring.center D := Subring.zero_mem (Subring.center D)
+    contradiction
   have : 1 + a⁻¹ * d * a = d := by
     calc
-      _ = (a⁻¹ * a) + a⁻¹ * d * a := by
-        simp only [add_left_inj]
-        refine Eq.symm (inv_mul_cancel₀ ?h)
-        by_contra nh
-        rw [nh] at ha
-        have : 0 ∈ Subring.center D := Subring.zero_mem (Subring.center D)
-        contradiction
+      _ = (a⁻¹ * a) + a⁻¹ * d * a := by simp only [add_left_inj, a_inv]
       _ = a⁻¹ * a + a⁻¹ * (d * a) := by
         simp only [add_right_inj]
         rw [@NonUnitalRing.mul_assoc]
-      _ = a⁻¹ * (a + d * a) := by
-
-        sorry
-      _ = a⁻¹ * (a * d - d * a + d * a) := sorry
-      _ = a⁻¹ * (a * d) := sorry
-      _ = _ := sorry
+      _ = a⁻¹ * (a + d * a) := by rw [@left_distrib]
+      _ = a⁻¹ * (a * d - d * a + d * a) := by rw [deq]
+      _ = a⁻¹ * (a * d) := by simp only [sub_add_cancel]
+      _ = (a⁻¹ * a) * d := by rw [@NonUnitalRing.mul_assoc]
+      _ = _ := by simp only [a_inv, one_mul]
   have : ∃ r ≥ 0, d ^ (p ^ r) ∈ k := by
 
     sorry -- he
