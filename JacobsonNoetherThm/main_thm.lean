@@ -4,87 +4,72 @@ import Mathlib.RingTheory.Algebraic
 import Mathlib.FieldTheory.Separable
 import Mathlib.Algebra.CharP.Subring
 
-variable {D : Type*} [DivisionRing D]
+open Classical
 
-local notation "k" => (Subring.center D)
+variable (D : Type*) [DivisionRing D] [Algebra.IsAlgebraic (Subring.center D) D]
 
-lemma choose_element_in_complementary_set (h : k ≠ (⊤ : Subring D)) : ∃ a : D, a ∉ k := by
-  by_contra! nt
-  apply h
-  rwa [← (Subring.eq_top_iff' (Subring.center D)).symm]
+local notation3 "k" => (Subring.center D)
 
-/-- J-N thm for `CharP D 0` case -/
-theorem thm_char_zero [CharP D 0] [Algebra.IsAlgebraic k D] (h : k ≠ (⊤ : Subring D)) :
+/-- Jacobson-Noether theorem in the `CharP D 0` case -/
+theorem JacobsonNoether_charZero [CharP D 0] (h : k ≠ (⊤ : Subring D)) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
-  letI : CharZero k := (CharP.charP_zero_iff_charZero k).mp (by infer_instance)
-  obtain ⟨a, ha⟩ := choose_element_in_complementary_set h
-  exact ⟨a, ⟨ha, Irreducible.separable (minpoly.irreducible (Algebra.IsIntegral.isIntegral a))⟩⟩
+  let _ : CharZero k := (CharP.charP_zero_iff_charZero k).mp (by infer_instance)
+  obtain ⟨a, ha⟩ := not_forall.mp <| mt (Subring.eq_top_iff' k).mpr h
+  exact ⟨a, ⟨ha, (minpoly.irreducible (Algebra.IsIntegral.isIntegral a)).separable⟩⟩
 
-/-- J-N thm for `CharP D p` case -/
-theorem thm_char_p {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D] (h : k ≠ (⊤ : Subring D)) :
+
+/-- Jacobson-Noether theorem in the `CharP D p` case -/
+theorem JacobsonNoether_charP {p : ℕ} [Fact p.Prime] [CharP D p] (h : k ≠ (⊤ : Subring D)) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   by_contra! insep
-  obtain ⟨a, ha⟩ := choose_element_in_complementary_set h
   have hinsep : ∀ x : D, IsSeparable k x → x ∈ k :=
     fun x h ↦ Classical.byContradiction fun hx ↦ insep x hx h
-
-  have a_not_commute : ∃ b : D , (δ a) b ≠ 0 := by
-    by_contra! nh
-    apply ha
-    apply Subring.mem_center_iff.mpr
-    intro x
-    have := @eq_add_of_sub_eq' _ _ (a * x) (x * a) 0 (nh x)
-    rw [add_zero] at this
-    exact this.symm
-
-  have : ∃ n > 0, ∃ b : D , ((δ a) ^ n) b ≠ 0 ∧ ((δ a) ^ (n + 1)) b = 0 := by
-    obtain ⟨b, hb1⟩ := a_not_commute
-    rcases (final_aux p ha hinsep) with ⟨m, _ , hm2⟩
+  -- The element `a` below is in `D` but not in `k`.
+  obtain ⟨a, ha⟩ := not_forall.mp <| mt (Subring.eq_top_iff' k).mpr h
+  -- We construct another element `b` that does not commute with `a`.
+  obtain ⟨b, hb1⟩ : ∃ b : D , (δ a) b ≠ 0 := by
+    rw [Subring.mem_center_iff, not_forall] at ha
+    use ha.choose
+    show a * ha.choose - ha.choose * a ≠ 0
+    simpa only [ne_eq, sub_eq_zero] using Ne.symm ha.choose_spec
+  -- We find a maximum natural number `n` such that `(δ a) ^ n ≠ 0`.
+  obtain ⟨n, hn, hb⟩ : ∃ n > 0, ((δ a) ^ n) b ≠ 0 ∧ ((δ a) ^ (n + 1)) b = 0 := by
+    obtain ⟨m, -, hm2⟩ := final_aux p ha hinsep
     have exist : ∃ n > 0, ((δ a) ^ (n + 1)) b = 0 := by
-      use p ^ m
-      constructor
-      · exact Fin.size_pos'
-      · have : (δ a) ^ (p ^ m + 1) = 0 := by
-          apply hm2 _
-          linarith
-        rw [this]; rfl
-    classical
-    have ⟨hex1, hex2⟩ := (Nat.find_spec exist)
-    use Nat.find exist
-    simp only [gt_iff_lt, Function.iterate_succ, Function.comp_apply, hex1, ne_eq, true_and]
-    use b
-    constructor
-    · let t := (Nat.find exist - 1 : ℕ)
-      have : ¬(t > 0 ∧ ((δ a) ^ (t + 1)) b = 0) :=
-        have this : t < Nat.find exist := Nat.sub_one_lt_of_lt hex1
-        (Nat.find_min exist) this
-      have ht : t + 1 = Nat.find exist := Nat.sub_add_cancel hex1
-      push_neg at this
-      rw [← ht]
-      by_cases choice : t > 0
-      · exact this choice
-      · have : t = 0 := by linarith
-        simp only [this, zero_add, Function.iterate_one, ne_eq]
-        exact hb1
-    · exact hex2
+      refine ⟨ p ^ m, ⟨pow_pos (Nat.Prime.pos (@Fact.out _ _)) m, ?_ ⟩ ⟩
+      simp only [hm2 (p^ m + 1) (by linarith), LinearMap.zero_apply]
+    refine ⟨Nat.find exist, ⟨(Nat.find_spec exist).1, ?_, (Nat.find_spec exist).2⟩⟩
+    set t := (Nat.find exist - 1 : ℕ) with ht
+    by_cases choice : 0 < t
+    · have := @Nat.find_min (H := exist) _ t ?_
+      · rw [not_and, ht, Nat.sub_add_cancel] at this
+        · exact this choice
+        · replace choice : 1 ≤ t := Nat.one_le_of_lt choice
+          apply le_trans choice
+          exact Nat.sub_le (Nat.find exist) 1
+      · rw [ht]
+        apply Nat.sub_one_lt
+        apply ne_of_gt
+        exact (Nat.find_spec exist).1
+    · rw [not_lt, Nat.le_zero] at choice
+      have := Nat.eq_add_of_sub_eq (Nat.find_spec exist).1 ht.symm
+      simp only [gt_iff_lt, choice, Nat.succ_eq_add_one, zero_add] at this
+      rw [this]
+      simp only [Function.iterate_one, ne_eq]
+      exact hb1
 
-  obtain ⟨n, hn, b, hb⟩ := this
   let c := ((δ a) ^ n) b
   letI : Invertible c := ⟨c⁻¹, inv_mul_cancel₀ (hb.1), mul_inv_cancel₀ (hb.1)⟩
-  have important (n): δ a (((δ a) ^ n) b) = ((δ a) ^ (n + 1)) b := by
+  have important (n) : δ a (((δ a) ^ n) b) = ((δ a) ^ (n + 1)) b := by
     rw [LinearMap.pow_apply, LinearMap.pow_apply, ← Nat.succ_eq_add_one]
     exact Eq.symm (Function.iterate_succ_apply' (δ a) n b)
   have hc : c * a = a * c := by
-    have f_def : (f a) c = a * c := rfl
-    have g_def : (g a) c = c * a := rfl
-    have prop_d : (δ a) c = (f a - g a) c := rfl
-    have prop_c : c = ((δ a) ^ n) b := rfl
-    rw [← f_def, ← g_def]
+    rw [← show (f a) c = a * c by rfl, ← show (g a) c = c * a by rfl]
     suffices (f a - g a) c = 0 from by
       rw [sub_eq_add_neg] at this
       rw [← zero_add (g a c), add_eq_of_eq_add_neg]
       exact this.symm
-    rw [← prop_d, prop_c, important, hb.right]
+    rw [← show (δ a) c = (f a - g a) c by rfl, show c = ((δ a) ^ n) b by rfl, important, hb.right]
 
   /-
   **The "Ring Tactic" must be use on a CommRing, there is no efficient Tactic if on none CommRing**
@@ -194,9 +179,10 @@ theorem thm_char_p {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D
   simp only [self_eq_add_left, one_ne_zero] at eq
 
 
-theorem Jacobson_Noether [Algebra.IsAlgebraic k D] (h : k ≠ (⊤ : Subring D)) :
+theorem Jacobson_Noether (h : k ≠ (⊤ : Subring D)) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   obtain ⟨p, hp⟩ := CharP.exists D
   rcases @CharP.char_is_prime_or_zero D _ _ _ p _ with h1 | h2
-  · exact @thm_char_p D _ p ⟨h1⟩ _ _ h
-  exact @thm_char_zero D _ (CharP.congr p h2) _ h
+  · apply JacobsonNoether_charP _ h hp
+  -- · exact @JacobsonNoether_charP D _ p ⟨h1⟩ _ _ h
+  exact @JacobsonNoether_charZero D _ (CharP.congr p h2) _ h
