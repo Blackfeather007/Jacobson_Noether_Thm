@@ -41,6 +41,10 @@ def f (a : D) : D →ₗ[k] D := {
     simp only [Algebra.mul_smul_comm, RingHom.id_apply]
 }
 
+@[simp]
+lemma f_def (a x : D) : f a x = a * x := rfl
+
+
 def g (a : D) : D →ₗ[k] D := {
   toFun := fun x ↦ x * a
   map_add' := fun x y ↦ RightDistribClass.right_distrib x y a
@@ -48,6 +52,9 @@ def g (a : D) : D →ₗ[k] D := {
     intro m x
     simp only [Algebra.smul_mul_assoc, RingHom.id_apply]
 }
+
+@[simp]
+lemma g_def (a x : D) : g a x = x * a := rfl
 
 def δ (a : D) : D →ₗ[k] D := {
   toFun := f a - g a
@@ -58,6 +65,9 @@ def δ (a : D) : D →ₗ[k] D := {
     intro m x
     simp only [Pi.sub_apply, map_smul, RingHom.id_apply, smul_sub]
 }
+
+@[simp]
+lemma δ_def (a x : D) : δ a x = f a x - g a x := rfl
 
 lemma comm_fg (a : D) : Commute (f a) (g a) := by
   rw [commute_iff_eq, LinearMap.mk.injEq, AddHom.mk.injEq]
@@ -84,6 +94,13 @@ lemma g_pow (a : D) (n : ℕ) : ∀ x : D, ((g a) ^ n).1 x = x * (a ^ n) := by
     rename_i n h
     show (x * a ^ n) * a = x * a ^ (n + 1)
     rw [pow_add, pow_one, mul_assoc]
+
+-- *Filippo* : Please change the name!
+lemma important (x y : D) (n : ℕ) :
+  δ x (((δ x) ^ n) y) = ((δ x) ^ (n + 1)) y := by
+  simp only [LinearMap.pow_apply, δ_def, f_def, g_def, Function.iterate_succ_apply']
+
+#check δ
 
 lemma final_aux (p : ℕ) [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D]
     {a : D} (ha : a ∉ k) (hinsep : ∀ x : D, IsSeparable k x → x ∈ k):
