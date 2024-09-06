@@ -1,22 +1,145 @@
 import JacobsonNoetherThm.AlgebraInstance
-import JacobsonNoetherThm.CharPAux
+-- import JacobsonNoetherThm.CharPAux
 import Mathlib.RingTheory.Algebraic
 import Mathlib.FieldTheory.Separable
 import Mathlib.Algebra.CharP.Subring
 
-open Classical
-
-variable (D : Type*) [DivisionRing D]
-
-variable {D} in
-lemma conj_nonComm_Algebra (s : ℕ) (a d : D) (ha : a ≠ 0) :
+-- *Filippo* This should probably not be here
+lemma conj_nonComm_Algebra {D : Type*} [DivisionRing D] (s : ℕ) (a d : D) (ha : a ≠ 0) :
   a⁻¹ * d ^ s * a = (a⁻¹ * d * a) ^ s := by
   let u : Dˣ := ⟨a, a⁻¹, mul_inv_cancel₀ ha, inv_mul_cancel₀ ha⟩
   exact (Units.conj_pow' u d s).symm
 
-variable [Algebra.IsAlgebraic (Subring.center D) D]
+namespace JacobsonNoether
+
+open Classical
+
+variable {D : Type*} [DivisionRing D]
 
 local notation3 "k" => (Subring.center D)
+
+private def f (a : D) : D →ₗ[k] D := {
+  toFun := fun x ↦ a * x
+  map_add' := fun x y ↦ LeftDistribClass.left_distrib a x y
+  map_smul' := by
+    intro m x
+    simp only [Algebra.mul_smul_comm, RingHom.id_apply]
+}
+
+@[simp]
+private lemma f_def (a x : D) : f a x = a * x := rfl
+
+private def g (a : D) : D →ₗ[k] D := {
+  toFun := fun x ↦ x * a
+  map_add' := fun x y ↦ RightDistribClass.right_distrib x y a
+  map_smul' := by
+    intro m x
+    simp only [Algebra.smul_mul_assoc, RingHom.id_apply]
+}
+
+@[simp]
+private lemma g_def (a x : D) : g a x = x * a := rfl
+
+private def δ (a : D) : D →ₗ[k] D := {
+  toFun := f a - g a
+  map_add' := by
+    intro x y
+    simp only [Pi.sub_apply, map_add, add_sub_add_comm]
+  map_smul' := by
+    intro m x
+    simp only [Pi.sub_apply, map_smul, RingHom.id_apply, smul_sub]
+}
+
+@[simp]
+private lemma δ_def (a x : D) : δ a x = f a x - g a x := rfl
+
+-- *Filippo* Change name
+private lemma comm_fg (a : D) : Commute (f a) (g a) := by
+  rw [commute_iff_eq, LinearMap.mk.injEq, AddHom.mk.injEq]
+  funext x
+  dsimp [f, g]; exact Eq.symm (mul_assoc a x a)
+
+-- *Filippo* Change name
+private lemma aux1 (a : D) : δ a = f a - g a := rfl
+
+lemma f_pow (a : D) (n : ℕ) : ∀ x : D, ((f a) ^ n).1 x = (a ^ n) * x := by
+  intro x
+  rw [LinearMap.coe_toAddHom, LinearMap.pow_apply]
+  induction n
+  · simp only [Function.iterate_zero, id_eq, pow_zero, one_mul]
+  · simp only [Function.iterate_succ', Function.comp_apply, *]
+    rename_i n h
+    rw [pow_succ', mul_assoc]; rfl
+
+lemma g_pow (a : D) (n : ℕ) : ∀ x : D, ((g a) ^ n).1 x = x * (a ^ n) := by
+  intro x
+  rw [LinearMap.coe_toAddHom, LinearMap.pow_apply]
+  induction n
+  · simp only [Function.iterate_zero, id_eq, pow_zero, mul_one]
+  · simp only [Function.iterate_succ', Function.comp_apply, *]
+    rename_i n h
+    show (x * a ^ n) * a = x * a ^ (n + 1)
+    rw [pow_add, pow_one, mul_assoc]
+
+-- *Filippo* : Please change the name!
+lemma important (x y : D) (n : ℕ) :
+  δ x (((δ x) ^ n) y) = ((δ x) ^ (n + 1)) y := by
+  simp only [LinearMap.pow_apply, δ_def, f_def, g_def, Function.iterate_succ_apply']
+
+variable [Algebra.IsAlgebraic (Subring.center D) D]
+
+-- *Filippo* Change name
+-- This *should not* be private
+lemma exists_pow_mem_center_ofInseparable (p : ℕ) [Fact p.Prime] [CharP D p] (a : D)
+   (hinsep : ∀ x : D, IsSeparable k x → x ∈ k) : ∃ n, a ^ (p ^ n) ∈ k := by
+  obtain ⟨n, g, hg, geqf⟩ := @Polynomial.exists_separable_of_irreducible k _ p _ (minpoly k a)
+    (minpoly.irreducible (Algebra.IsIntegral.isIntegral a)) ((NeZero.ne' p).symm)
+  have h1 : (Polynomial.aeval a) ((Polynomial.expand k (p ^ n)) g) = 0 := by
+    rw [congrArg (⇑(Polynomial.aeval a)) geqf, minpoly.aeval k a]
+  simp only [Polynomial.expand_aeval] at h1
+  use n
+  apply hinsep (a ^ p ^ n) (Polynomial.Separable.of_dvd hg (minpoly.dvd_iff.mpr h1))
+
+lemma exists_pow_mem_center_ofInseparable' (p : ℕ) [Fact p.Prime] [CharP D p] {a : D}
+   (ha : a ∉ k) (hinsep : ∀ x : D, IsSeparable k x → x ∈ k) : ∃ n ≥ 1, a ^ (p ^ n) ∈ k := by
+  obtain ⟨n, g, hg, geqf⟩ := @Polynomial.exists_separable_of_irreducible k _ p _ (minpoly k a)
+    (minpoly.irreducible (Algebra.IsIntegral.isIntegral a)) ((NeZero.ne' p).symm)
+  by_cases nzero : n = 0
+  · rw [nzero, pow_zero, Polynomial.expand_one] at geqf
+    rw [geqf] at hg
+    tauto
+  use n
+  have h1 : (Polynomial.aeval a) ((Polynomial.expand k (p ^ n)) g) = 0 := by
+    rw [congrArg (⇑(Polynomial.aeval a)) geqf, minpoly.aeval k a]
+  simp only [Polynomial.expand_aeval] at h1
+  constructor
+  · exact Nat.one_le_iff_ne_zero.mpr nzero
+  exact hinsep (a ^ p ^ n) (Polynomial.Separable.of_dvd hg (minpoly.dvd_iff.mpr h1))
+
+-- Not private but better name
+lemma final_aux (p : ℕ) [Fact p.Prime] [CharP D p]
+    {a : D} (ha : a ∉ k) (hinsep : ∀ x : D, IsSeparable k x → x ∈ k):
+  ∃ m ≥ 1, ∀ n ≥ (p ^ m), (δ a) ^ n = 0 := by
+  obtain ⟨m, hm⟩ := exists_pow_mem_center_ofInseparable' p ha hinsep
+  use m
+  constructor
+  · exact hm.1
+  · intro n hn
+    have inter1 : (δ a) ^ (p ^ m) = (f a) ^ (p ^ m) - (g a) ^ (p ^ m) :=
+      sub_pow_char_pow_of_commute (D →ₗ[k] D) (f a) (g a) (comm_fg a)
+    have inter2 : ∀ x : D, ((δ a) ^ (p ^ m)).1 x = 0 := by
+      intro x
+      rw [congrArg LinearMap.toAddHom inter1]
+      show ((f a) ^ (p ^ m)).1 x - ((g a) ^ (p ^ m)).1 x = 0
+      rw [f_pow, g_pow]
+      apply sub_eq_zero_of_eq
+      suffices h : a ^ (p ^ m) ∈ k by
+        rw [Subring.mem_center_iff] at h; exact (h x).symm
+      exact hm.2
+    have inter3 : (δ a) ^ (p ^ m) = 0 := LinearMap.ext_iff.mpr inter2
+    have boring : n = (n - (p ^ m)) + p ^ m := (Nat.sub_eq_iff_eq_add hn).mp rfl
+    rw [boring, pow_add, inter3, mul_zero]
+
 
 /-- Jacobson-Noether theorem in the `CharP D 0` case -/
 theorem JacobsonNoether_charZero [CharP D 0] (h : k ≠ (⊤ : Subring D)) :
@@ -120,7 +243,7 @@ theorem JacobsonNoether_charP (p : ℕ) [Fact p.Prime] [CharP D p]
       _ = (a⁻¹ * a) * d := by rw [sub_add_cancel, mul_assoc]
       _ = _ := by simp only [inv_mul_cancel₀ ha₀, one_mul]
   -- The natural `r` below is such that `d ^ (p ^ r) ∈ k`.
-  obtain ⟨r, hr⟩ := (l1 p d hinsep)
+  obtain ⟨r, hr⟩ := (exists_pow_mem_center_ofInseparable p d hinsep)
 
   have final_eq : d ^ (p ^ r) = 1 + d ^ (p ^ r) := by
     calc
@@ -139,11 +262,14 @@ theorem JacobsonNoether_charP (p : ℕ) [Fact p.Prime] [CharP D p]
           _ = _ := by simp only [inv_mul_cancel₀ ha₀, one_mul]
   simp only [self_eq_add_left, one_ne_zero] at final_eq
 
+variable (D) in
 theorem Jacobson_Noether (H : k ≠ (⊤ : Subring D)) :
     ∃ x : D, x ∉ k ∧ IsSeparable k x := by
   obtain ⟨p, hp⟩ := CharP.exists D
   rcases CharP.char_is_prime_or_zero D p with h | h
   · let _ := Fact.mk h
-    apply JacobsonNoether_charP D p H
+    apply JacobsonNoether_charP p H
   · rw [h] at hp
-    exact JacobsonNoether_charZero D H
+    exact JacobsonNoether_charZero H
+
+end JacobsonNoether
