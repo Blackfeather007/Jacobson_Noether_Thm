@@ -92,15 +92,6 @@ theorem thm_char_p {p : ℕ} [Fact p.Prime] [CharP D p] [Algebra.IsAlgebraic k D
   **I use so many "rw" Tactic similar to the beginning learning of Lean**
   -/
   let d := c⁻¹ * a * (δ a) ^[n-1] b
-  /-
-  have hc' : c⁻¹ * a = a * c⁻¹ := by
-    apply_fun (c⁻¹ * · ) at hc
-    rw [← mul_assoc, inv_mul_cancel₀, one_mul, ← mul_assoc] at hc
-    apply_fun (· * c⁻¹) at hc
-    rw [mul_assoc, mul_inv_cancel₀, mul_one] at hc
-    exact hc.symm
-    exact Ne.symm (NeZero.ne' c)
-  -/
   have hc': c⁻¹ * a = a * c⁻¹ := by
     calc
       _ = c⁻¹ * a * (c * c⁻¹) := by simp only [mul_inv_cancel_of_invertible, mul_one]
